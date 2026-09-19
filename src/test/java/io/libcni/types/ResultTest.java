@@ -79,4 +79,25 @@ class ResultTest {
         CniError e = assertThrows(CniError.class, () -> ResultFactory.createFromBytes("{"));
         assertNotNull(e.getCause());
     }
+
+    @Test
+    void parsesDnsSandboxAndRouteAttributesUsedByRealPlugins() {
+        String json = """
+            {"cniVersion":"1.1.0", "interfaces":[{"name":"eth0","sandbox":"/proc/42/ns/net"}],
+             "dns":{"nameservers":["1.1.1.1"],"domain":"cni.local","search":["cni.local"],"options":["ndots:2"]},
+             "routes":[{"dst":"0.0.0.0/0","gw":"10.91.0.1","mtu":1400,"advmss":1360,
+                        "priority":100,"table":254,"scope":0}]}
+            """;
+        CurrentResult result = (CurrentResult) ResultFactory.createFromBytes(json);
+        assertEquals("/proc/42/ns/net", result.interfaces.get(0).sandbox);
+        assertEquals("cni.local", result.dns.domain);
+        assertEquals(java.util.List.of("cni.local"), result.dns.search);
+        assertEquals(java.util.List.of("ndots:2"), result.dns.options);
+        Route route = result.routes.get(0);
+        assertEquals(1400, route.mtu);
+        assertEquals(1360, route.advmss);
+        assertEquals(100, route.priority);
+        assertEquals(254, route.table);
+        assertEquals(0, route.scope);
+    }
 }
