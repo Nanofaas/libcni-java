@@ -31,6 +31,15 @@
       "fields": [
         {
           "name": "nameservers"
+        },
+        {
+          "name": "domain"
+        },
+        {
+          "name": "search"
+        },
+        {
+          "name": "options"
         }
       ],
       "methods": [
@@ -80,6 +89,9 @@
         },
         {
           "name": "socketPath"
+        },
+        {
+          "name": "sandbox"
         }
       ],
       "methods": [
@@ -120,6 +132,21 @@
         },
         {
           "name": "gw"
+        },
+        {
+          "name": "mtu"
+        },
+        {
+          "name": "advmss"
+        },
+        {
+          "name": "priority"
+        },
+        {
+          "name": "table"
+        },
+        {
+          "name": "scope"
         }
       ],
       "methods": [
