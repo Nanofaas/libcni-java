@@ -3,6 +3,11 @@ name: build
 on:
   push:
     branches: [main, master]
+    # A release version is published from a tag, never from a push: the version is
+    # a fixed number now, and GitHub Packages will not accept the same one twice,
+    # so a push-triggered publish would fail on the second commit. Pushes to the
+    # default branch still build and test; only a tag publishes.
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -70,10 +75,10 @@ jobs:
 
   publish:
     name: publish to GitHub Packages
-    # Only once both jobs agree the library works, and only from the default branch: a package is
-    # not something to take back, and containerd-java resolves it from here.
+    # Only once both jobs agree the library works, and only for a tag: a package is not
+    # something to take back, and containerd-java resolves it from here.
     needs: [unit, native]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -84,6 +89,23 @@ jobs:
           java-version: '25'
 
       - uses: gradle/actions/setup-gradle@v6
+
+      # Before the upload, not after: publishing 0.22.0 under the tag v0.21.0 would spend
+      # a version number on the wrong build, and a package version cannot be reused.
+      - name: Check the tag matches the version in the build
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(grep -oP '^version = "\K[^"]+' build.gradle.kts)"
+          if [ -z "$version" ]; then
+            echo "could not read the version from build.gradle.kts" >&2
+            exit 1
+          fi
+          if [ "$tag" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME does not match version $version in build.gradle.kts" >&2
+            exit 1
+          fi
+          echo "tag $GITHUB_REF_NAME matches version $version"
 
       - name: Publish
         run: ./gradlew publishAllPublicationsToGitHubPackagesRepository --stacktrace
