@@ -27,7 +27,7 @@ both on the JVM and as a native image.
 ```kotlin
 repositories {
     maven {
-        url = uri("https://maven.pkg.github.com/miciav/libcni-java")
+        url = uri("https://maven.pkg.github.com/Nanofaas/libcni-java")
         credentials {
             username = System.getenv("GITHUB_ACTOR")
             password = System.getenv("GITHUB_TOKEN")   // needs read:packages
@@ -45,7 +45,7 @@ with `read:packages` is needed to resolve this, not only to publish it.
 The build was a `build.sh` driving `javac` directly, which kept the project
 free of a build tool but also meant it could not be depended on: there was no
 artifact to resolve. Gradle replaces it — same sources, same 105 tests — so
-that a runtime like [containerd-java](https://github.com/miciav/containerd-java)
+that a runtime like [containerd-java](https://github.com/Nanofaas/containerd-java)
 can consume this as an ordinary dependency.
 
 ## Usage

@@ -67,7 +67,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/miciav/libcni-java")
+            url = uri("https://maven.pkg.github.com/Nanofaas/libcni-java")
             // Credentials come from the environment so nothing is committed. In Actions these are
             // the workflow's own GITHUB_TOKEN; locally, a personal token with write:packages.
             credentials {
