@@ -11,9 +11,8 @@ import java.util.List;
  */
 public final class FindInPath {
 
-    /** Executable filename extensions for the current platform. */
-    public static final String[] EXECUTABLE_FILE_EXTENSIONS =
-        isWindows() ? new String[]{".exe"} : new String[]{""};
+    /** Executable filename extension for the current platform. */
+    private static final String EXECUTABLE_EXTENSION = isWindows() ? ".exe" : "";
 
     private FindInPath() {
     }
@@ -40,11 +39,9 @@ public final class FindInPath {
         }
 
         for (String path : paths) {
-            for (String ext : EXECUTABLE_FILE_EXTENSIONS) {
-                File f = new File(path, plugin + ext);
-                if (f.isFile()) {
-                    return f.getPath();
-                }
+            File f = new File(path, plugin + EXECUTABLE_EXTENSION);
+            if (f.isFile()) {
+                return f.getPath();
             }
         }
         throw new CniError(CniErrorCode.PLUGIN_NOT_AVAILABLE,

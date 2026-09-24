@@ -16,13 +16,4 @@ public class IPConfig {
 
     public IPConfig() {
     }
-
-    public IPConfig copy() {
-        IPConfig c = new IPConfig();
-        c.version = version;
-        c.iface = iface;
-        c.address = address;
-        c.gateway = gateway;
-        return c;
-    }
 }

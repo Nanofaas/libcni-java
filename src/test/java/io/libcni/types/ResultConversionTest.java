@@ -38,6 +38,25 @@ class ResultConversionTest {
         assertEquals("0000:00:1f.6", reparsed.interfaces.get(0).pciID);
     }
 
+    /** Every field survives parse, the getAsVersion copy and serialization. */
+    @Test
+    void sameFamilyConversionKeepsEveryField() {
+        String json = "{\"cniVersion\":\"1.1.0\","
+            + "\"interfaces\":[{\"name\":\"eth0\",\"mac\":\"aa:bb:cc:dd:ee:ff\",\"mtu\":1500,"
+            + "\"socketPath\":\"/run/x.sock\",\"pciID\":\"0000:00:1f.6\",\"sandbox\":\"/var/run/netns/x\"}],"
+            + "\"ips\":[{\"interface\":0,\"address\":\"10.0.0.2/24\",\"gateway\":\"10.0.0.1\"}],"
+            + "\"routes\":[{\"dst\":\"0.0.0.0/0\",\"gw\":\"10.0.0.1\",\"mtu\":1400,\"advmss\":1360,"
+            + "\"priority\":10,\"table\":100,\"scope\":0}],"
+            + "\"dns\":{\"nameservers\":[\"10.0.0.53\"],\"domain\":\"example.org\","
+            + "\"search\":[\"svc.example.org\"],\"options\":[\"ndots:5\"]}}";
+
+        Result d = ResultFactory.createFromBytes(json).getAsVersion("1.0.0");
+
+        JsonObject expected = JsonParser.parseString(json).getAsJsonObject();
+        expected.addProperty("cniVersion", "1.0.0");
+        assertEquals(expected, JsonParser.parseString(d.toJsonString()));
+    }
+
     @Test
     void downgradeDerivesIpv4FromAddress() {
         Result r = ResultFactory.createFromBytes(

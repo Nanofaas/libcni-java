@@ -12,7 +12,7 @@ class PluginDecoderTest {
 
     @Test
     void decodesSupportedVersions() {
-        PluginInfo i = new PluginDecoder().decode(
+        PluginInfo i = PluginDecoder.decode(
             "{\"cniVersion\":\"0.4.0\",\"supportedVersions\":[\"0.3.0\",\"0.4.0\"]}");
         assertEquals(Arrays.asList("0.3.0", "0.4.0"), i.supportedVersions());
         assertEquals("0.4.0", i.cniVersion());
@@ -21,18 +21,18 @@ class PluginDecoderTest {
     @Test
     void rejectsMissingCniVersion() {
         assertThrows(CniError.class,
-            () -> new PluginDecoder().decode("{\"supportedVersions\":[\"0.4.0\"]}"));
+            () -> PluginDecoder.decode("{\"supportedVersions\":[\"0.4.0\"]}"));
     }
 
     @Test
     void rejectsMissingSupportedVersions() {
         assertThrows(CniError.class,
-            () -> new PluginDecoder().decode("{\"cniVersion\":\"0.4.0\"}"));
+            () -> PluginDecoder.decode("{\"cniVersion\":\"0.4.0\"}"));
     }
 
     @Test
     void treats020WithoutVersionsAsLegacy() {
-        PluginInfo i = new PluginDecoder().decode("{\"cniVersion\":\"0.2.0\"}");
+        PluginInfo i = PluginDecoder.decode("{\"cniVersion\":\"0.2.0\"}");
         assertEquals(Arrays.asList("0.1.0", "0.2.0"), i.supportedVersions());
     }
 
@@ -40,12 +40,12 @@ class PluginDecoderTest {
     void pluginSupportsReportsGivenVersions() {
         PluginInfo i = PluginInfo.pluginSupports("0.1.0", "0.2.0");
         assertEquals(Arrays.asList("0.1.0", "0.2.0"), i.supportedVersions());
-        assertEquals(Version.current(), i.cniVersion());
+        assertEquals(Version.CURRENT, i.cniVersion());
     }
 
     @Test
     void decodeRejectsMalformedJson() {
-        CniError e = assertThrows(CniError.class, () -> new PluginDecoder().decode("{"));
+        CniError e = assertThrows(CniError.class, () -> PluginDecoder.decode("{"));
         assertNotNull(e.getCause());
     }
 }

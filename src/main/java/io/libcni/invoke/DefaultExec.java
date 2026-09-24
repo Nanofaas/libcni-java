@@ -13,20 +13,14 @@ import java.util.Map;
 public class DefaultExec implements Exec {
 
     private final RawExec rawExec;
-    private final PluginDecoder pluginDecoder;
 
     public DefaultExec() {
-        this(new RawExec(), new PluginDecoder());
+        this(0);
     }
 
-    public DefaultExec(RawExec rawExec, PluginDecoder pluginDecoder) {
-        this.rawExec = rawExec;
-        this.pluginDecoder = pluginDecoder;
-    }
-
-    /** Convenience constructor applying a per-invocation timeout (in milliseconds). */
+    /** Applies a per-invocation timeout (in milliseconds); {@code 0} means no limit. */
     public DefaultExec(long timeoutMillis) {
-        this(new RawExec(timeoutMillis), new PluginDecoder());
+        this.rawExec = new RawExec(timeoutMillis);
     }
 
     @Override
@@ -36,11 +30,11 @@ public class DefaultExec implements Exec {
 
     @Override
     public String findInPath(String plugin, List<String> paths) {
-        return rawExec.findInPath(plugin, paths);
+        return FindInPath.find(plugin, paths);
     }
 
     @Override
     public PluginInfo decode(byte[] jsonBytes) {
-        return pluginDecoder.decode(new String(jsonBytes, StandardCharsets.UTF_8));
+        return PluginDecoder.decode(new String(jsonBytes, StandardCharsets.UTF_8));
     }
 }

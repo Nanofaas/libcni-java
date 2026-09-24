@@ -13,9 +13,4 @@ public interface Result {
 
     /** Serializes this result to its JSON representation. */
     String toJsonString();
-
-    /** Prints the result as JSON to stdout. */
-    default void print() {
-        System.out.println(toJsonString());
-    }
 }

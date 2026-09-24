@@ -20,8 +20,6 @@ public class RuntimeConf {
      * plugin's advertised capabilities.
      */
     public Map<String, Object> capabilityArgs;
-    /** Deprecated; superseded by the cache directory on {@code CNIConfig}. */
-    public String cacheDir;
 
     public RuntimeConf() {
     }

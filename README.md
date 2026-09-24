@@ -35,7 +35,7 @@ repositories {
     }
 }
 dependencies {
-    implementation("io.libcni:libcni-java:0.22.0")
+    implementation("io.libcni:libcni-java:0.23.0")
 }
 ```
 
@@ -79,7 +79,7 @@ cni.delNetworkList(list, rt);                   // CNI DEL (reverse order)
 
 | Area | Notes |
 |------|-------|
-| `CNI` / `CNIConfig` | `addNetwork(List)`, `delNetwork(List)`, `checkNetwork(List)`, `validateNetwork(List)`, `getVersionInfo`, result caching |
+| `CNIConfig` | `addNetwork(List)`, `delNetwork(List)`, `checkNetwork(List)`, `validateNetwork(List)`, `getVersionInfo`, result caching |
 | Config loading | `.conflist` and legacy `.conf` parsing, `loadNetworkConf`, `injectConf`, `confListFromConf` |
 | Plugin invocation | `Exec`/`DefaultExec`/`RawExec`, `CNI_*` env, `prevResult` chaining, result version fixup, `VERSION` detection, configurable per-invocation timeout |
 | Result model | `Result`/`CurrentResult` (spec 0.3.0–1.1.0), `Interface`, `IPConfig`, `Route`, `DNS`, family-aware version conversion |
@@ -122,7 +122,7 @@ parse exception preserved via `getCause()`) rather than leaking `JsonSyntaxExcep
 ## Package layout
 
 ```
-io.libcni            CNI, CNIConfig, PluginConfig, NetworkConfigList,
+io.libcni            CNIConfig, PluginConfig, NetworkConfigList,
                      RuntimeConf, ConfigLoader
 io.libcni.types      PluginConf, CniError, Result/CurrentResult, DNS/Route/...
 io.libcni.invoke     Exec, DefaultExec, RawExec, Args, FindInPath, Invoke

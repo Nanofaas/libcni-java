@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -66,33 +65,27 @@ public class RawExec {
                 process = pb.start();
                 final Process proc = process;
 
-                Thread stdinWriter = new Thread(() -> {
+                Thread stdinWriter = Thread.ofPlatform().daemon().start(() -> {
                     try (OutputStream os = proc.getOutputStream()) {
                         os.write(stdinData);
                     } catch (IOException e) {
                         stdinError.set(e);
                     }
                 });
-                stdinWriter.setDaemon(true);
-                stdinWriter.start();
 
-                Thread stdoutReader = new Thread(() -> {
+                Thread stdoutReader = Thread.ofPlatform().daemon().start(() -> {
                     try (InputStream in = proc.getInputStream()) {
                         in.transferTo(stdout);
                     } catch (IOException ignored) {
                     }
                 });
-                stdoutReader.setDaemon(true);
-                stdoutReader.start();
 
-                Thread stderrReader = new Thread(() -> {
+                Thread stderrReader = Thread.ofPlatform().daemon().start(() -> {
                     try (InputStream es = proc.getErrorStream()) {
                         es.transferTo(stderrBuf);
                     } catch (IOException ignored) {
                     }
                 });
-                stderrReader.setDaemon(true);
-                stderrReader.start();
 
                 boolean finished;
                 if (deadline == Long.MAX_VALUE) {
@@ -146,10 +139,6 @@ public class RawExec {
             }
         }
         throw new CniError(CniErrorCode.IO_FAILURE, "plugin " + pluginPath + " failed after retries", "");
-    }
-
-    public String findInPath(String plugin, List<String> paths) {
-        return FindInPath.find(plugin, paths);
     }
 
     private static CniError timeoutError(String pluginPath) {

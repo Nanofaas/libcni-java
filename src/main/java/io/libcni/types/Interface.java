@@ -15,15 +15,4 @@ public class Interface {
 
     public Interface() {
     }
-
-    public Interface copy() {
-        Interface i = new Interface();
-        i.name = name;
-        i.mac = mac;
-        i.mtu = mtu;
-        i.sandbox = sandbox;
-        i.socketPath = socketPath;
-        i.pciID = pciID;
-        return i;
-    }
 }

@@ -1,8 +1,8 @@
 package io.libcni.types;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,6 +24,8 @@ public class CurrentResult implements Result {
     /** Version used when a result omits its {@code cniVersion}. */
     public static final String IMPLEMENTED_SPEC_VERSION = "1.0.0";
 
+    private static final Gson GSON = new Gson();
+
     public String cniVersion;
     public List<Interface> interfaces;
     public List<IPConfig> ips;
@@ -36,10 +38,6 @@ public class CurrentResult implements Result {
     /** True for the 0.3.x/0.4.0 result family (explicit IP {@code version}). */
     public static boolean isLegacyVersion(String version) {
         return "0.3.0".equals(version) || "0.3.1".equals(version) || "0.4.0".equals(version);
-    }
-
-    private static boolean isCurrentVersion(String version) {
-        return "1.0.0".equals(version) || "1.1.0".equals(version);
     }
 
     @Override
@@ -66,12 +64,8 @@ public class CurrentResult implements Result {
         boolean fromLegacy = isLegacyVersion(cniVersion);
         boolean toLegacy = isLegacyVersion(version);
 
-        CurrentResult r = new CurrentResult();
+        CurrentResult r = GSON.fromJson(GSON.toJsonTree(this), CurrentResult.class);
         r.cniVersion = version;
-        r.dns = dns == null ? null : dns.copy();
-        r.interfaces = copyInterfaces();
-        r.ips = copyIps();
-        r.routes = copyRoutes();
 
         if (fromLegacy && !toLegacy) {
             // Upgrade to 1.x: drop the explicit IP version (implied by the address).
@@ -225,38 +219,5 @@ public class CurrentResult implements Result {
             }
             o.add(key, arr);
         }
-    }
-
-    private List<Interface> copyInterfaces() {
-        if (interfaces == null) {
-            return null;
-        }
-        List<Interface> out = new ArrayList<>(interfaces.size());
-        for (Interface i : interfaces) {
-            out.add(i.copy());
-        }
-        return out;
-    }
-
-    private List<IPConfig> copyIps() {
-        if (ips == null) {
-            return null;
-        }
-        List<IPConfig> out = new ArrayList<>(ips.size());
-        for (IPConfig i : ips) {
-            out.add(i.copy());
-        }
-        return out;
-    }
-
-    private List<Route> copyRoutes() {
-        if (routes == null) {
-            return null;
-        }
-        List<Route> out = new ArrayList<>(routes.size());
-        for (Route r : routes) {
-            out.add(r.copy());
-        }
-        return out;
     }
 }

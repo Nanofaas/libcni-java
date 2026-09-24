@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.libcni"
-version = "0.22.0"
+version = "0.23.0"
 
 val gsonVersion = "2.11.0"
 val junitVersion = "5.11.4"

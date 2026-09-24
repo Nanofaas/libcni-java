@@ -14,9 +14,12 @@ import java.util.List;
  * Decodes the JSON returned by a plugin's {@code VERSION} command, mirroring
  * {@code version.PluginDecoder} in libcni.
  */
-public class PluginDecoder {
+public final class PluginDecoder {
 
-    public PluginInfo decode(String jsonBytes) {
+    private PluginDecoder() {
+    }
+
+    public static PluginInfo decode(String jsonBytes) {
         JsonObject o;
         try {
             o = JsonParser.parseString(jsonBytes).getAsJsonObject();
