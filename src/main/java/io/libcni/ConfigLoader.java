@@ -95,14 +95,12 @@ public final class ConfigLoader {
         }
 
         boolean disableCheck = readBool(raw, "disableCheck");
-        boolean disableGC = readBool(raw, "disableGC");
         boolean loadOnlyInlinedPlugins = readBool(raw, "loadOnlyInlinedPlugins");
 
         NetworkConfigList list = new NetworkConfigList();
         list.name = name;
         list.cniVersion = cniVersion;
         list.disableCheck = disableCheck;
-        list.disableGC = disableGC;
         list.loadOnlyInlinedPlugins = loadOnlyInlinedPlugins;
         list.bytes = bytes;
         list.plugins = new ArrayList<>();
@@ -150,16 +148,6 @@ public final class ConfigLoader {
             throw new CniError(CniErrorCode.INVALID_NETWORK_CONFIG, "no plugin configs found", "");
         }
         return conf;
-    }
-
-    /** Alias of {@link #networkConfFromBytes}. */
-    public static NetworkConfigList confListFromBytes(String bytes) {
-        return networkConfFromBytes(bytes);
-    }
-
-    /** Alias of {@link #networkConfFromFile}. */
-    public static NetworkConfigList confListFromFile(String filename) {
-        return networkConfFromFile(filename);
     }
 
     /**

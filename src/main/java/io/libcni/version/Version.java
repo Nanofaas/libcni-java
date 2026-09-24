@@ -10,9 +10,7 @@ public final class Version {
     }
 
     /** The CNI spec version implemented by this library. */
-    public static String current() {
-        return "1.1.0";
-    }
+    public static final String CURRENT = "1.1.0";
 
     /**
      * Parses a version string like {@code "0.4.0"} into {@code [major, minor, micro]}.
@@ -44,11 +42,6 @@ public final class Version {
             throw new IllegalArgumentException(
                 "failed to convert " + label + " version part \"" + part + "\" of \"" + version + "\"", e);
         }
-    }
-
-    /** Returns {@code true} if {@code version} is greater than {@code other}. */
-    public static boolean greaterThan(String version, String other) {
-        return compare(version, other) > 0;
     }
 
     /** Returns {@code true} if {@code version} is greater than or equal to {@code other}. */

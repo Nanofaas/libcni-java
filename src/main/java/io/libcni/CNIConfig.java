@@ -34,12 +34,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Default {@link CNI} implementation, mirroring {@code libcni.CNIConfig} in the
+ * The CNI client, mirroring {@code libcni.CNIConfig} in the
  * Go library. Locates plugins on {@link #path}, invokes them with the correct
  * {@code CNI_*} environment, chains {@code prevResult} between plugins, and
  * caches the result of a successful ADD so DEL/CHECK can restore it.
  */
-public class CNIConfig implements CNI {
+public class CNIConfig {
 
     public static final String DEFAULT_CACHE_DIR = "/var/lib/cni";
 
@@ -55,7 +55,7 @@ public class CNIConfig implements CNI {
 
     public CNIConfig(List<String> path, String cacheDir, Exec exec) {
         this.path = path == null ? List.of() : List.copyOf(path);
-        this.cacheDir = cacheDir;
+        this.cacheDir = cacheDir == null || cacheDir.isEmpty() ? DEFAULT_CACHE_DIR : cacheDir;
         this.exec = exec != null ? exec : new DefaultExec();
     }
 
@@ -63,7 +63,6 @@ public class CNIConfig implements CNI {
     // Network list operations
     // ------------------------------------------------------------------
 
-    @Override
     public Result addNetworkList(NetworkConfigList list, RuntimeConf rt) {
         Result result = null;
         for (PluginConfig net : list.plugins) {
@@ -78,7 +77,6 @@ public class CNIConfig implements CNI {
         return result;
     }
 
-    @Override
     public void checkNetworkList(NetworkConfigList list, RuntimeConf rt) {
         if (!supportsCachedResult(list.cniVersion)) {
             throw new CniError(CniErrorCode.INCOMPATIBLE_CNI_VERSION,
@@ -90,11 +88,10 @@ public class CNIConfig implements CNI {
 
         Result cachedResult = getCachedResultWrapped(list.name, list.cniVersion, rt);
         for (PluginConfig net : list.plugins) {
-            checkNetwork(list.name, list.cniVersion, net, cachedResult, rt);
+            execWithoutResult("CHECK", list.name, list.cniVersion, net, cachedResult, rt);
         }
     }
 
-    @Override
     public void delNetworkList(NetworkConfigList list, RuntimeConf rt) {
         Result cachedResult = null;
         if (supportsCachedResult(list.cniVersion)) {
@@ -104,7 +101,7 @@ public class CNIConfig implements CNI {
         for (int i = list.plugins.size() - 1; i >= 0; i--) {
             PluginConfig net = list.plugins.get(i);
             try {
-                delNetwork(list.name, list.cniVersion, net, cachedResult, rt);
+                execWithoutResult("DEL", list.name, list.cniVersion, net, cachedResult, rt);
             } catch (CniError e) {
                 throw new CniError(e.code(),
                     "plugin " + pluginDescription(net.network) + " failed (delete): " + e.msg(), e.details());
@@ -113,7 +110,6 @@ public class CNIConfig implements CNI {
         cacheDel(list.name, rt);
     }
 
-    @Override
     public Result getNetworkListCachedResult(NetworkConfigList list, RuntimeConf rt) {
         return getCachedResult(list.name, list.cniVersion, rt);
     }
@@ -122,34 +118,30 @@ public class CNIConfig implements CNI {
     // Single network operations
     // ------------------------------------------------------------------
 
-    @Override
     public Result addNetwork(PluginConfig net, RuntimeConf rt) {
         Result result = addNetwork(net.network.name, net.network.cniVersion, net, null, rt);
         cacheAdd(result, net.network.name, rt);
         return result;
     }
 
-    @Override
     public void checkNetwork(PluginConfig net, RuntimeConf rt) {
         if (!supportsCachedResult(net.network.cniVersion)) {
             throw new CniError(CniErrorCode.INCOMPATIBLE_CNI_VERSION,
                 "configuration version \"" + net.network.cniVersion + "\" does not support the CHECK command", "");
         }
         Result cachedResult = getCachedResultWrapped(net.network.name, net.network.cniVersion, rt);
-        checkNetwork(net.network.name, net.network.cniVersion, net, cachedResult, rt);
+        execWithoutResult("CHECK", net.network.name, net.network.cniVersion, net, cachedResult, rt);
     }
 
-    @Override
     public void delNetwork(PluginConfig net, RuntimeConf rt) {
         Result cachedResult = null;
         if (supportsCachedResult(net.network.cniVersion)) {
             cachedResult = getCachedResultForDelete(net.network.name, net.network.cniVersion, rt);
         }
-        delNetwork(net.network.name, net.network.cniVersion, net, cachedResult, rt);
+        execWithoutResult("DEL", net.network.name, net.network.cniVersion, net, cachedResult, rt);
         cacheDel(net.network.name, rt);
     }
 
-    @Override
     public Result getNetworkCachedResult(PluginConfig net, RuntimeConf rt) {
         return getCachedResult(net.network.name, net.network.cniVersion, rt);
     }
@@ -158,7 +150,6 @@ public class CNIConfig implements CNI {
     // Validation and version queries
     // ------------------------------------------------------------------
 
-    @Override
     public List<String> validateNetworkList(NetworkConfigList list) {
         Set<String> caps = new LinkedHashSet<>();
         List<String> errs = new ArrayList<>();
@@ -168,13 +159,7 @@ public class CNIConfig implements CNI {
             } catch (CniError e) {
                 errs.add(e.getMessage());
             }
-            if (net.network.capabilities != null) {
-                for (Map.Entry<String, Boolean> en : net.network.capabilities.entrySet()) {
-                    if (Boolean.TRUE.equals(en.getValue())) {
-                        caps.add(en.getKey());
-                    }
-                }
-            }
+            caps.addAll(enabledCaps(net.network));
         }
         if (!errs.isEmpty()) {
             throw new CniError(CniErrorCode.INVALID_NETWORK_CONFIG, String.join(", ", errs), "");
@@ -182,18 +167,19 @@ public class CNIConfig implements CNI {
         return new ArrayList<>(caps);
     }
 
-    @Override
     public List<String> validateNetwork(PluginConfig net) {
-        List<String> caps = new ArrayList<>();
-        if (net.network.capabilities != null) {
-            for (Map.Entry<String, Boolean> en : net.network.capabilities.entrySet()) {
-                if (Boolean.TRUE.equals(en.getValue())) {
-                    caps.add(en.getKey());
-                }
-            }
-        }
         validatePlugin(net.network.type, net.network.cniVersion);
-        return caps;
+        return enabledCaps(net.network);
+    }
+
+    private static List<String> enabledCaps(PluginConf net) {
+        if (net.capabilities == null) {
+            return List.of();
+        }
+        return net.capabilities.entrySet().stream()
+            .filter(en -> Boolean.TRUE.equals(en.getValue()))
+            .map(Map.Entry::getKey)
+            .toList();
     }
 
     private void validatePlugin(String pluginName, String expectedVersion) {
@@ -211,7 +197,6 @@ public class CNIConfig implements CNI {
             "plugin " + pluginName + " does not support config version \"" + expectedVersion + "\"", "");
     }
 
-    @Override
     public PluginInfo getVersionInfo(String pluginType) {
         String pluginPath = exec.findInPath(pluginType, path);
         return Invoke.getVersionInfo(pluginPath, exec);
@@ -231,16 +216,12 @@ public class CNIConfig implements CNI {
         return Invoke.execPluginWithResult(pluginPath, newConf.bytes, args("ADD", rt), exec);
     }
 
-    private void checkNetwork(String name, String cniVersion, PluginConfig net, Result prevResult, RuntimeConf rt) {
+    /** Runs CHECK or DEL, which return no result. */
+    private void execWithoutResult(String command, String name, String cniVersion, PluginConfig net,
+                                   Result prevResult, RuntimeConf rt) {
         String pluginPath = exec.findInPath(net.network.type, path);
         PluginConfig newConf = buildOneConfig(name, cniVersion, net, prevResult, rt);
-        Invoke.execPluginWithoutResult(pluginPath, newConf.bytes, args("CHECK", rt), exec);
-    }
-
-    private void delNetwork(String name, String cniVersion, PluginConfig net, Result prevResult, RuntimeConf rt) {
-        String pluginPath = exec.findInPath(net.network.type, path);
-        PluginConfig newConf = buildOneConfig(name, cniVersion, net, prevResult, rt);
-        Invoke.execPluginWithoutResult(pluginPath, newConf.bytes, args("DEL", rt), exec);
+        Invoke.execPluginWithoutResult(pluginPath, newConf.bytes, args(command, rt), exec);
     }
 
     private PluginConfig buildOneConfig(String name, String cniVersion, PluginConfig orig, Result prevResult, RuntimeConf rt) {
@@ -296,16 +277,6 @@ public class CNIConfig implements CNI {
     // Result caching
     // ------------------------------------------------------------------
 
-    private String getCacheDir(RuntimeConf rt) {
-        if (cacheDir != null && !cacheDir.isEmpty()) {
-            return cacheDir;
-        }
-        if (rt.cacheDir != null && !rt.cacheDir.isEmpty()) {
-            return rt.cacheDir;
-        }
-        return DEFAULT_CACHE_DIR;
-    }
-
     private String getCacheFilePath(String netName, RuntimeConf rt) {
         if (netName == null || netName.isEmpty()
             || rt.containerID == null || rt.containerID.isEmpty()
@@ -317,7 +288,7 @@ public class CNIConfig implements CNI {
             throw new CniError(CniErrorCode.INVALID_ENVIRONMENT_VARIABLES,
                 "cache file path fields must not contain path separators", "");
         }
-        return Path.of(getCacheDir(rt), "results-v2", cacheKey(netName, rt.containerID, rt.ifName)).toString();
+        return Path.of(cacheDir, "results-v2", cacheKey(netName, rt.containerID, rt.ifName)).toString();
     }
 
     /** Unambiguous cache key: hex SHA-256 of a JSON array of the three identity fields. */

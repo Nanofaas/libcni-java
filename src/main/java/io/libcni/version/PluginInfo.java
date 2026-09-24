@@ -1,8 +1,5 @@
 package io.libcni.version;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,17 +31,6 @@ public class PluginInfo {
         if (versions.length < 1) {
             throw new IllegalArgumentException("programmer error: you must support at least one version");
         }
-        return new PluginInfo(Version.current(), Arrays.asList(versions));
-    }
-
-    public String toJsonString() {
-        JsonObject o = new JsonObject();
-        o.addProperty("cniVersion", cniVersion);
-        JsonArray arr = new JsonArray();
-        for (String v : supportedVersions) {
-            arr.add(v);
-        }
-        o.add("supportedVersions", arr);
-        return new Gson().toJson(o);
+        return new PluginInfo(Version.CURRENT, Arrays.asList(versions));
     }
 }

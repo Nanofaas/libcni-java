@@ -14,16 +14,4 @@ public class Route {
 
     public Route() {
     }
-
-    public Route copy() {
-        Route r = new Route();
-        r.dst = dst;
-        r.gw = gw;
-        r.mtu = mtu;
-        r.advmss = advmss;
-        r.priority = priority;
-        r.table = table;
-        r.scope = scope;
-        return r;
-    }
 }

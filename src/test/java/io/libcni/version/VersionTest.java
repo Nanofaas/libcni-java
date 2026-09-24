@@ -1,7 +1,6 @@
 package io.libcni.version;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,11 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class VersionTest {
-
-    @Test
-    void currentIsImplementedSpecVersion() {
-        assertEquals("1.1.0", Version.current());
-    }
 
     @Test
     void emptyVersionParsesAs010() {
@@ -46,11 +40,11 @@ class VersionTest {
     }
 
     @Test
-    void greaterThanComparesMajorMinorMicro() {
-        assertTrue(Version.greaterThan("1.1.0", "1.0.0"));
-        assertTrue(Version.greaterThan("0.4.0", "0.3.1"));
-        assertFalse(Version.greaterThan("0.4.0", "0.4.0"));
-        assertFalse(Version.greaterThan("0.3.0", "0.4.0"));
+    void compareOrdersMajorMinorMicro() {
+        assertTrue(Version.compare("1.1.0", "1.0.0") > 0);
+        assertTrue(Version.compare("0.4.0", "0.3.1") > 0);
+        assertFalse(Version.compare("0.4.0", "0.4.0") > 0);
+        assertFalse(Version.compare("0.3.0", "0.4.0") > 0);
     }
 
     @Test

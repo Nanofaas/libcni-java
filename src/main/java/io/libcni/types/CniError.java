@@ -2,7 +2,6 @@ package io.libcni.types;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.Gson;
 
 /**
  * An error as defined by the CNI specification: a numeric {@code code},
@@ -51,17 +50,6 @@ public class CniError extends RuntimeException {
             return msg;
         }
         return msg + "; " + details;
-    }
-
-    /** Serializes this error to the CNI error JSON shape. */
-    public String toJsonString() {
-        JsonObject o = new JsonObject();
-        o.addProperty("code", code);
-        o.addProperty("msg", msg);
-        if (details != null && !details.isEmpty()) {
-            o.addProperty("details", details);
-        }
-        return new Gson().toJson(o);
     }
 
     /** Parses a CNI error from its JSON representation. */

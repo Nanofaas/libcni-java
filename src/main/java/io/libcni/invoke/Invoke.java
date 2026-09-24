@@ -23,8 +23,7 @@ public final class Invoke {
 
     /** Executes a plugin that is expected to return a result on stdout. */
     public static Result execPluginWithResult(String pluginPath, String netconf, Args args, Exec exec) {
-        Exec e = exec != null ? exec : new DefaultExec();
-        byte[] stdout = e.execPlugin(pluginPath, netconf.getBytes(StandardCharsets.UTF_8), args.asEnv());
+        byte[] stdout = exec.execPlugin(pluginPath, netconf.getBytes(StandardCharsets.UTF_8), args.asEnv());
         try {
             String[] fixed = fixupResultVersion(netconf, new String(stdout, StandardCharsets.UTF_8));
             return ResultFactory.create(fixed[0], fixed[1]);
@@ -36,8 +35,7 @@ public final class Invoke {
 
     /** Executes a plugin whose stdout is ignored. */
     public static void execPluginWithoutResult(String pluginPath, String netconf, Args args, Exec exec) {
-        Exec e = exec != null ? exec : new DefaultExec();
-        e.execPlugin(pluginPath, netconf.getBytes(StandardCharsets.UTF_8), args.asEnv());
+        exec.execPlugin(pluginPath, netconf.getBytes(StandardCharsets.UTF_8), args.asEnv());
     }
 
     /**
@@ -45,24 +43,23 @@ public final class Invoke {
      * understand the {@code VERSION} command, reports {@code 0.1.0}.
      */
     public static PluginInfo getVersionInfo(String pluginPath, Exec exec) {
-        Exec e = exec != null ? exec : new DefaultExec();
         Args args = new Args();
         args.command = "VERSION";
         args.netNS = "dummy";
         args.ifName = "dummy";
         args.path = "dummy";
 
-        String stdin = "{\"cniVersion\":\"" + Version.current() + "\"}";
+        String stdin = "{\"cniVersion\":\"" + Version.CURRENT + "\"}";
         byte[] stdout;
         try {
-            stdout = e.execPlugin(pluginPath, stdin.getBytes(StandardCharsets.UTF_8), args.asEnv());
+            stdout = exec.execPlugin(pluginPath, stdin.getBytes(StandardCharsets.UTF_8), args.asEnv());
         } catch (CniError ce) {
             if ("unknown CNI_COMMAND: VERSION".equals(ce.msg())) {
                 return PluginInfo.pluginSupports("0.1.0");
             }
             throw ce;
         }
-        return e.decode(stdout);
+        return exec.decode(stdout);
     }
 
     /**
